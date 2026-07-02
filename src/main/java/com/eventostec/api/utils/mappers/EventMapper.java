@@ -1,5 +1,6 @@
 package com.eventostec.api.utils.mappers;
 
+import com.eventostec.api.adapters.outbound.entites.JpaEventEntity;
 import com.eventostec.api.domain.event.Event;
 import com.eventostec.api.domain.event.EventRequestDTO;
 import org.mapstruct.Mapper;
@@ -21,7 +22,7 @@ public interface EventMapper {
                 @Mapping(source = "dto.date", target = "date", qualifiedByName = "epochToDate"),
                 @Mapping(source = "dto.remote", target = "remote"),
         })
-        Event toEntity(EventRequestDTO dto, String imgUrl);
+        Event dtoToEntity(EventRequestDTO dto, String imgUrl);
 
         @Mappings({
                 @Mapping(source = "entity.title", target = "title"),
@@ -31,6 +32,17 @@ public interface EventMapper {
                 @Mapping(source = "entity.remote", target = "remote"),
         })
         EventRequestDTO toDto(Event entity);
+
+        @Mappings({
+                @Mapping(source = "jpa.title", target = "title"),
+                @Mapping(source = "jpa.description", target = "description"),
+                @Mapping(source = "jpa.eventUrl", target = "eventUrl"),
+                @Mapping(source = "jpa.date", target = "date", qualifiedByName = "dateToEpoch"),
+                @Mapping(source = "jpa.remote", target = "remote"),
+                @Mapping(source = "jpa.id", target = "id"),
+                @Mapping(source = "jpa.imgUrl", target = "imgUrl"),
+        })
+        Event jpaToDomain(JpaEventEntity jpa);
 
     @Named("epochToDate")
     default Date epochToDate(Long timestamp) {

@@ -1,16 +1,15 @@
 package com.eventostec.api.application.service;
 
+import com.eventostec.api.application.usecases.EventUseCases;
 import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.domain.event.*;
 import com.eventostec.api.utils.mappers.EventMapper;
-import com.eventostec.api.adapters.outbound.repositories.EventRepository;
+import com.sun.jdi.request.EventRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,7 +29,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class EventService {
+public class EventServiceable implements EventUseCases {
 
     @Value("${aws.bucket.name}")
     private String bucketName;
@@ -53,7 +52,7 @@ public class EventService {
         if (data.image() != null) {
             imgUrl = this.uploadImg(data.image());
         }
-        Event newEvent = mapper.toEntity(data, imgUrl);
+        Event newEvent = mapper.dtoToEntity(data, imgUrl);
         repository.save(newEvent);
 
         if (Boolean.FALSE.equals(data.remote())) {
@@ -63,9 +62,13 @@ public class EventService {
         return newEvent;
     }
 
+    @Override
+    public Event createEvent(EventRequest eventRequest) {
+        return null;
+    }
+
     public List<EventResponseDTO> getUpcomingEvents(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<EventAddressProjection> eventsPage = this.repository.findUpcomingEvents(new Date(), pageable);
+        Page<EventAddressProjection> eventsPage = this.repository.findUpcomingEvents(page, size);
         return eventsPage.map(event -> new EventResponseDTO(
                         event.getId(),
                         event.getTitle(),
@@ -112,15 +115,13 @@ public class EventService {
             throw new IllegalArgumentException("Invalid admin key");
         }
 
-        this.repository.delete(this.repository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found")));
-
+        this.repository.deleteById(eventId);
     }
 
     public List<EventResponseDTO> searchEvents(String title){
         title = (title != null) ? title : "";
 
-        List<EventAddressProjection> eventsList = this.repository.findEventsByTitle(title);
+        List<EventAddressProjection> eventsList = this.repository.findEventsRyTitle(title);
         return eventsList.stream().map(event -> new EventResponseDTO(
                         event.getId(),
                         event.getTitle(),
@@ -141,9 +142,7 @@ public class EventService {
         startDate = (startDate != null) ? startDate : new Date(0);
         endDate = (endDate != null) ? endDate : new Date();
 
-        Pageable pageable = PageRequest.of(page, size);
-
-        Page<EventAddressProjection> eventsPage = this.repository.findFilteredEvents(city, uf, startDate, endDate, pageable);
+        Page<EventAddressProjection> eventsPage = this.repository.findfilteredEvents(city, uf, startDate, endDate, page, size);
         return eventsPage.map(event -> new EventResponseDTO(
                         event.getId(),
                         event.getTitle(),

@@ -1,10 +1,11 @@
 package com.eventostec.api.service;
 
+import com.eventostec.api.adapters.outbound.entites.JpaEventEntity;
 import com.eventostec.api.application.service.AddressService;
 import com.eventostec.api.application.service.CouponService;
-import com.eventostec.api.application.service.EventService;
+import com.eventostec.api.application.service.EventServiceable;
 import com.eventostec.api.domain.event.*;
-import com.eventostec.api.adapters.outbound.repositories.EventRepository;
+import com.eventostec.api.adapters.outbound.repositories.JpaEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -41,10 +42,10 @@ class EventServiceTest {
     private CouponService couponService;
 
     @Mock
-    private EventRepository repository;
+    private JpaEventRepository repository;
 
     @InjectMocks
-    private EventService eventService;
+    private EventServiceable eventService;
 
     private final String adminKey = "test-admin-key";
     private final String bucketName = "test-bucket";
@@ -52,7 +53,7 @@ class EventServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        eventService = new EventService(s3Client, addressService, couponService, repository);
+        eventService = new EventServiceable(s3Client, addressService, couponService, (EventRepository) repository);
         // Configurando valores diretamente nos atributos usando ReflectionTestUtils
         ReflectionTestUtils.setField(eventService, "adminKey", adminKey);
         ReflectionTestUtils.setField(eventService, "bucketName", bucketName);
@@ -94,10 +95,10 @@ class EventServiceTest {
         event.setId(eventId);
         event.setTitle("Teste de evento");
         event.setDescription("Descrição do evento");
-        event.setDate(new Date());
+        event.getDate();
         event.setEventUrl("https://evento.com");
 
-        when(repository.findById(eventId)).thenReturn(Optional.of(event));
+        when(repository.findById(eventId)).thenReturn((Optional<JpaEventEntity>) Optional.of(event));
         when(addressService.findByEventId(eventId)).thenReturn(Optional.empty());
         when(couponService.consultCoupons(eventId, new Date())).thenReturn(Collections.emptyList());
 
